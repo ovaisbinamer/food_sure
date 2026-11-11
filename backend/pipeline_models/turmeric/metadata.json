@@ -1,0 +1,13 @@
+{
+  "spice": "turmeric",
+  "classes": [
+    "pure",
+    "rice_flour",
+    "semolina"
+  ],
+  "architecture": "Pipeline 1: CatBoost",
+  "trained_on": "train+val photos",
+  "n_train_photos": 292,
+  "n_test_photos": 57,
+  "test_acc_3class": 84.21
+}

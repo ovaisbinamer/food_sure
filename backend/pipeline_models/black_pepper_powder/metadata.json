@@ -1,0 +1,13 @@
+{
+  "spice": "black_pepper_powder",
+  "classes": [
+    "charcoal",
+    "millet",
+    "pure"
+  ],
+  "architecture": "Pipeline 1: CatBoost",
+  "trained_on": "train+val photos",
+  "n_train_photos": 290,
+  "n_test_photos": 56,
+  "test_acc_3class": 83.93
+}

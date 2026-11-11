@@ -1,0 +1,13 @@
+{
+  "spice": "red_chilli_powder",
+  "classes": [
+    "pure",
+    "sawdust",
+    "semolina"
+  ],
+  "architecture": "Pipeline 2: CatBoost + LightGBM + ExtraTrees soft vote (gray-world)",
+  "trained_on": "train+val photos",
+  "n_train_photos": 289,
+  "n_test_photos": 56,
+  "test_acc_3class": 80.36
+}

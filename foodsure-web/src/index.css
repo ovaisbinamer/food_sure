@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+/*
+  Food-Sure looks like a lab report: white paper, black ink, thin rules, tables.
+  The colours are the three spices. Turmeric yellow marks the main action,
+  chilli red is used only for an adulterated result, green only for a pure one.
+*/
+@theme static {
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-bg: #ffffff;
+  --color-tint: #f4f3f0;
+  --color-rule: #d9d6cf;
+
+  --color-ink: #17140f;
+  --color-ink-soft: #4a463f;
+  --color-ink-faint: #6f6a61;
+
+  --color-turmeric: #f2b705;
+  --color-turmeric-dark: #d9a300;
+  --color-chilli: #b3261e;
+
+  /* result colours: pure, low, medium, high, unclear */
+  --color-good: #1f7a3d;
+  --color-warning: #a86400;
+  --color-serious: #c2410c;
+  --color-critical: #b3261e;
+  --color-unknown: #6f6a61;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-turmeric);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
+/* tables used across the app */
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.report-table th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 12.5px;
+  color: var(--color-ink-faint);
+  padding: 8px 12px 8px 0;
+  border-bottom: 1px solid var(--color-ink);
+  white-space: nowrap;
+}
+.report-table td {
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px solid var(--color-rule);
+  vertical-align: top;
+}
+.report-table .num {
+  font-family: var(--font-mono);
+  text-align: right;
+  padding-right: 0;
+  white-space: nowrap;
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin-slow 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

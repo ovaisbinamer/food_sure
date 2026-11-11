@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Food-Sure — Model Comparison</title>
+<style>
+  :root { color-scheme: light; }
+  .viz-root {
+    --surface-1:      #fcfcfb;
+    --page:           #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-1:       #2a78d6; /* SVM */
+    --series-2:       #eb6834; /* Random Forest */
+    --series-3:       #1baf7a; /* Custom CNN */
+    --series-4:       #eda100; /* MobileNetV2 */
+    --series-5:       #e87ba4; /* ResNet50 */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page:           #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border:         rgba(255,255,255,0.10);
+      --series-1:       #3987e5;
+      --series-2:       #d95926;
+      --series-3:       #199e70;
+      --series-4:       #c98500;
+      --series-5:       #d55181;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page:           #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    --series-1:       #3987e5;
+    --series-2:       #d95926;
+    --series-3:       #199e70;
+    --series-4:       #c98500;
+    --series-5:       #d55181;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--text-primary);
+  }
+  .viz-root { padding: 28px 20px 44px; max-width: 980px; margin: 0 auto; }
+
+  .header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .titles h1 { font-size: 19px; font-weight: 650; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .titles p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+  .toggle {
+    display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary);
+    border: 1px solid var(--border); border-radius: 999px; padding: 4px 6px;
+  }
+  .toggle button {
+    border: none; background: transparent; color: var(--text-secondary); font: inherit;
+    padding: 5px 11px; border-radius: 999px; cursor: pointer; transition: background .15s, color .15s;
+  }
+  .toggle button.active { background: var(--series-1); color: #fff; }
+
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 24px 18px;
+    margin-bottom: 22px;
+  }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--text-secondary); }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+  .chart-scroll { overflow-x: auto; }
+  svg { display: block; overflow: visible; font-family: inherit; }
+  .axis-label { fill: var(--text-muted); font-size: 11px; }
+  .group-label { fill: var(--text-secondary); font-size: 12.5px; font-weight: 600; }
+  .gridline { stroke: var(--gridline); stroke-width: 1; }
+  .baseline { stroke: var(--baseline); stroke-width: 1.5; }
+  .bar-value { fill: var(--text-primary); font-size: 10.5px; font-weight: 600; text-anchor: middle; }
+  .bar-value-dim { fill: var(--text-muted); font-size: 10.5px; font-weight: 600; text-anchor: middle; }
+  .bar { rx: 3; cursor: pointer; }
+
+  .tooltip {
+    position: absolute; pointer-events: none; opacity: 0; transition: opacity .1s;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px 11px; font-size: 12px; color: var(--text-primary); box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    white-space: nowrap; z-index: 10;
+  }
+  .tooltip .t-title { font-weight: 650; margin-bottom: 2px; }
+  .tooltip .t-sub { color: var(--text-secondary); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  caption { text-align: left; font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--gridline); vertical-align: top; }
+  th { color: var(--text-muted); font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.04em; }
+  td.model-cell { font-weight: 650; }
+  .swatch-dot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 7px; vertical-align: middle; }
+  .acc-cell { font-variant-numeric: tabular-nums; }
+  .best { position: relative; }
+  .best::after { content: "best"; margin-left: 6px; font-size: 10px; font-weight: 700; color: var(--series-3); text-transform: uppercase; letter-spacing: .03em; }
+  tr:last-child td { border-bottom: none; }
+  .foot-note { font-size: 12px; color: var(--text-muted); margin-top: 14px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="viz-root" id="vizRoot">
+
+  <div class="header">
+    <div class="titles">
+      <h1>Food-Sure — model comparison</h1>
+      <p>7-class adulteration classifier per spice · test-set accuracy · source: <code>final_comparison_summary.csv</code></p>
+    </div>
+    <div class="toggle" role="group" aria-label="Theme">
+      <button type="button" id="btnLight" class="active">Light</button>
+      <button type="button" id="btnDark">Dark</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="legend" id="legend"></div>
+    <div class="chart-scroll">
+      <div id="chartWrap" style="position:relative;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <table>
+      <caption>What each model looks at, how it decides, and how accurate it was on each spice.</caption>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>What it looks at</th>
+          <th>How it decides</th>
+          <th>Black pepper</th>
+          <th>Red chilli</th>
+          <th>Turmeric</th>
+          <th>Avg.</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+    <p class="foot-note">
+      In short: SVM and Random Forest are given a short description of each photo (color + texture numbers) and sort
+      it into a category. Custom CNN, MobileNetV2, and ResNet50 look at the photo itself and learn what matters on
+      their own — the two pretrained ones (MobileNetV2, ResNet50) had a head start from already knowing 1.4 million
+      other photos, which is why they clearly beat the from-scratch CNN. Every model is choosing 1 of the same 7
+      answers (pure spice, or one of two adulterants at 5%, 10%, or 15%) — none of them are doing a simple yes/no
+      "is it fake" check.
+    </p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var root = document.getElementById('vizRoot');
+
+  var MODELS = [
+    {
+      key: 'svm', name: 'SVM',
+      feature: 'Described using 101 numbers instead of the raw photo: how much red, green, and blue color appears, plus 5 numbers for surface texture (how rough, grainy, or smooth it looks) — texture is what picks up gritty adulterants like sawdust or semolina mixed into a smooth powder',
+      classifier: 'Looks at those 101 numbers and draws the best dividing line to sort a sample into 1 of 7 categories (pure, or an adulterant at 5%, 10%, or 15%)',
+      color: 'var(--series-1)',
+      acc: { 'Black pepper': 62.86, 'Red chilli': 62.32, 'Turmeric': 65.71 }
+    },
+    {
+      key: 'rf', name: 'Random Forest',
+      feature: 'Same 101 numbers as SVM — color amounts plus surface texture',
+      classifier: 'Builds 200 small decision trees, each one votes on an answer, and the majority vote wins',
+      color: 'var(--series-2)',
+      acc: { 'Black pepper': 55.71, 'Red chilli': 55.07, 'Turmeric': 71.43 }
+    },
+    {
+      key: 'cnn', name: 'Custom CNN',
+      feature: 'No hand-picked numbers — looks directly at the raw pixels and tries to learn its own patterns from scratch, with no prior knowledge to start from',
+      classifier: 'Picks whichever of the 7 categories it is most confident about. With only ~1,000 training photos it did not have enough data to learn well, which is why it performed the worst',
+      color: 'var(--series-3)',
+      acc: { 'Black pepper': 14.29, 'Red chilli': 14.29, 'Turmeric': 28.07 }
+    },
+    {
+      key: 'mnet', name: 'MobileNetV2',
+      feature: 'Also looks directly at raw pixels, but starts out already trained on 1.4 million general photos (ImageNet) — so it already knows how to recognize edges, textures, and shapes before we fine-tune it on spice photos',
+      classifier: 'Same "most confident category" decision, after fine-tuning the pretrained network on spice photos in two stages',
+      color: 'var(--series-4)',
+      acc: { 'Black pepper': 57.14, 'Red chilli': 60.71, 'Turmeric': 54.39 }
+    },
+    {
+      key: 'rnet', name: 'ResNet50',
+      feature: 'Same idea as MobileNetV2 — a deeper network pretrained on 1.4 million general photos, then fine-tuned on our spice photos',
+      classifier: 'Same "most confident category" decision — performed best on all three spices, so this is the model actually deployed in the app',
+      color: 'var(--series-5)',
+      acc: { 'Black pepper': 82.14, 'Red chilli': 62.5, 'Turmeric': 78.95 }
+    }
+  ];
+  var SPICES = ['Black pepper', 'Red chilli', 'Turmeric'];
+
+  // ---------- Legend ----------
+  var legend = document.getElementById('legend');
+  MODELS.forEach(function (m) {
+    var item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = '<span class="legend-swatch" style="background:' + m.color + '"></span>' + m.name;
+    legend.appendChild(item);
+  });
+
+  // ---------- Chart ----------
+  var W = 900, H = 340;
+  var marginTop = 16, marginBottom = 34, marginLeft = 8, marginRight = 8;
+  var plotH = H - marginTop - marginBottom;
+  var groupGap = 46;
+  var groupW = (W - marginLeft - marginRight - groupGap * (SPICES.length - 1)) / SPICES.length;
+  var barGap = 6;
+  var barW = (groupW - barGap * (MODELS.length - 1)) / MODELS.length;
+  var maxVal = 100;
+
+  function yFor(v) { return marginTop + plotH - (v / maxVal) * plotH; }
+
+  var svgNS = 'http://www.w3.org/2000/svg';
+  var svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + (H + 4));
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', H + 4);
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', 'Grouped bar chart of test accuracy by spice and model');
+
+  // gridlines (0/25/50/75/100)
+  [0, 25, 50, 75, 100].forEach(function (v) {
+    var y = yFor(v);
+    var line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', marginLeft); line.setAttribute('x2', W - marginRight);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('class', v === 0 ? 'baseline' : 'gridline');
+    svg.appendChild(line);
+    var lbl = document.createElementNS(svgNS, 'text');
+    lbl.setAttribute('x', marginLeft); lbl.setAttribute('y', y - 4);
+    lbl.setAttribute('class', 'axis-label');
+    lbl.textContent = v + '%';
+    svg.appendChild(lbl);
+  });
+
+  var tooltip = document.createElement('div');
+  tooltip.className = 'tooltip';
+  document.getElementById('chartWrap').style.paddingBottom = '4px';
+
+  SPICES.forEach(function (spice, gi) {
+    var gx = marginLeft + gi * (groupW + groupGap);
+
+    MODELS.forEach(function (m, mi) {
+      var val = m.acc[spice];
+      var bx = gx + mi * (barW + barGap);
+      var by = yFor(val);
+      var bh = plotH + marginTop - by;
+
+      var rect = document.createElementNS(svgNS, 'rect');
+      rect.setAttribute('x', bx);
+      rect.setAttribute('y', by);
+      rect.setAttribute('width', barW);
+      rect.setAttribute('height', Math.max(bh, 1));
+      rect.setAttribute('rx', 3);
+      rect.setAttribute('fill', m.color);
+      rect.setAttribute('class', 'bar');
+      rect.addEventListener('mousemove', function (e) {
+        tooltip.innerHTML = '<div class="t-title">' + m.name + '</div><div class="t-sub">' + spice + ' · ' + val.toFixed(2) + '% test accuracy</div>';
+        tooltip.style.opacity = 1;
+        var wrap = document.getElementById('chartWrap').getBoundingClientRect();
+        tooltip.style.left = (e.clientX - wrap.left + 14) + 'px';
+        tooltip.style.top = (e.clientY - wrap.top - 14) + 'px';
+      });
+      rect.addEventListener('mouseleave', function () { tooltip.style.opacity = 0; });
+      svg.appendChild(rect);
+
+      // direct value label (relief for sub-3:1 light-mode slots)
+      var vlabel = document.createElementNS(svgNS, 'text');
+      vlabel.setAttribute('x', bx + barW / 2);
+      vlabel.setAttribute('y', by - 5);
+      vlabel.setAttribute('class', val < 20 ? 'bar-value-dim' : 'bar-value');
+      vlabel.textContent = Math.round(val);
+      svg.appendChild(vlabel);
+    });
+
+    var glabel = document.createElementNS(svgNS, 'text');
+    glabel.setAttribute('x', gx + groupW / 2);
+    glabel.setAttribute('y', H - 10);
+    glabel.setAttribute('text-anchor', 'middle');
+    glabel.setAttribute('class', 'group-label');
+    glabel.textContent = spice;
+    svg.appendChild(glabel);
+  });
+
+  var chartWrap = document.getElementById('chartWrap');
+  chartWrap.appendChild(svg);
+  chartWrap.appendChild(tooltip);
+
+  // ---------- Table ----------
+  var tbody = document.getElementById('tableBody');
+  MODELS.forEach(function (m) {
+    var vals = SPICES.map(function (s) { return m.acc[s]; });
+    var avg = (vals.reduce(function (a, b) { return a + b; }, 0) / vals.length);
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="model-cell"><span class="swatch-dot" style="background:' + m.color + '"></span>' + m.name + '</td>' +
+      '<td>' + m.feature + '</td>' +
+      '<td>' + m.classifier + '</td>' +
+      '<td class="acc-cell">' + m.acc['Black pepper'].toFixed(2) + '%' + (m.key === 'rnet' ? '<span class="best" style="display:none"></span>' : '') + '</td>' +
+      '<td class="acc-cell">' + m.acc['Red chilli'].toFixed(2) + '%</td>' +
+      '<td class="acc-cell">' + m.acc['Turmeric'].toFixed(2) + '%</td>' +
+      '<td class="acc-cell"><strong>' + avg.toFixed(2) + '%</strong></td>';
+    tbody.appendChild(tr);
+  });
+  // mark ResNet50 as best per spice explicitly
+  var bestPerSpice = {};
+  SPICES.forEach(function (s) {
+    var best = MODELS.reduce(function (a, b) { return b.acc[s] > a.acc[s] ? b : a; });
+    bestPerSpice[s] = best.key;
+  });
+  Array.from(tbody.children).forEach(function (tr, i) {
+    var m = MODELS[i];
+    SPICES.forEach(function (s, si) {
+      if (bestPerSpice[s] === m.key) {
+        var cell = tr.children[3 + si];
+        cell.innerHTML += ' <span style="color:var(--series-3);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;">best</span>';
+      }
+    });
+  });
+
+  // ---------- Theme toggle ----------
+  var btnLight = document.getElementById('btnLight');
+  var btnDark = document.getElementById('btnDark');
+  function setTheme(mode) {
+    if (mode === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      btnDark.classList.add('active'); btnLight.classList.remove('active');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      btnLight.classList.add('active'); btnDark.classList.remove('active');
+    }
+  }
+  btnLight.addEventListener('click', function () { setTheme('light'); });
+  btnDark.addEventListener('click', function () { setTheme('dark'); });
+})();
+</script>
+
+</body>
+</html>

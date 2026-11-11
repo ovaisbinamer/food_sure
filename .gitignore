@@ -1,0 +1,20 @@
+# Claude Code skills / settings
+.claude/
+
+# Documents and presentations
+*.docx
+*.pdf
+*.pptx
+FOOD_SURE_PROJECT_STATUS.md
+colab_training_log.md
+
+# Build output and dependencies
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.env
+.env.*
+
+# Old frontend copy kept locally
+foodsure-web/_old_src_backup_*/

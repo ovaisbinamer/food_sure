@@ -1,0 +1,47 @@
+{
+  "black_pepper_powder": {
+    "model_name": "ResNet50",
+    "test_acc": 82.14,
+    "img_size": 224,
+    "preprocess": "resnet50",
+    "class_names": [
+      "10_pct_charcoal",
+      "10_pct_millet",
+      "15_pct_charcoal",
+      "15_pct_millet",
+      "5_pct_charcoal",
+      "5_pct_millet",
+      "pure"
+    ]
+  },
+  "red_chilli_powder": {
+    "model_name": "ResNet50",
+    "test_acc": 62.5,
+    "img_size": 224,
+    "preprocess": "resnet50",
+    "class_names": [
+      "10_pct_sawdust",
+      "10_pct_semolina",
+      "15_pct_sawdust",
+      "15_pct_semolina",
+      "5_pct_sawdust",
+      "5_pct_semolina",
+      "pure"
+    ]
+  },
+  "turmeric": {
+    "model_name": "ResNet50",
+    "test_acc": 78.95,
+    "img_size": 224,
+    "preprocess": "resnet50",
+    "class_names": [
+      "10_pct_rice_flour",
+      "10_pct_semolina",
+      "15_pct_rice_flour",
+      "15_pct_semolina",
+      "5_pct_rice_flour",
+      "5_pct_semolina",
+      "pure"
+    ]
+  }
+}
