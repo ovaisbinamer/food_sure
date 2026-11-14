@@ -108,13 +108,21 @@ def extract_features(img_bgr, use_gray_world=False):
 
 
 def image_crops(img_bgr):
-    """Centre + three corners at 256px, or one resized patch for small photos."""
+    """Four 256px crops at native resolution inside the central spice region."""
     import cv2
 
     h, w = img_bgr.shape[:2]
     if h >= CROP_SIZE and w >= CROP_SIZE:
-        coords = [((h - CROP_SIZE) // 2, (w - CROP_SIZE) // 2), (0, 0),
-                  (h - CROP_SIZE, w - CROP_SIZE), (0, w - CROP_SIZE)]
+        cy, cx = h // 2, w // 2
+        # Stay within the central 50% region so outer paper/plate borders are excluded
+        half_span_y = min(h // 4, max(0, cy - CROP_SIZE // 2))
+        half_span_x = min(w // 4, max(0, cx - CROP_SIZE // 2))
+        coords = [
+            (cy - CROP_SIZE // 2, cx - CROP_SIZE // 2),
+            (max(0, cy - CROP_SIZE // 2 - half_span_y), max(0, cx - CROP_SIZE // 2 - half_span_x)),
+            (min(h - CROP_SIZE, cy - CROP_SIZE // 2 + half_span_y), min(w - CROP_SIZE, cx - CROP_SIZE // 2 + half_span_x)),
+            (max(0, cy - CROP_SIZE // 2 - half_span_y), min(w - CROP_SIZE, cx - CROP_SIZE // 2 + half_span_x)),
+        ]
         return [img_bgr[t:t + CROP_SIZE, l:l + CROP_SIZE] for t, l in coords[:CROPS_PER_IMAGE]]
     return [cv2.resize(img_bgr, (CROP_SIZE, CROP_SIZE))]
 
